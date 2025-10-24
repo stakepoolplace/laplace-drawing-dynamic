@@ -1,7 +1,7 @@
 # =============================================================================
 # 1-laplace-drawing-recurrent.py
 # Proof-of-Concept : LSTM + reconstruction de Fourier dans le domaine de Laplace
-# Auteur : Eric Marchand, Ph.D.
+# Auteur : Eric Marchand
 # =============================================================================
 
 import numpy as np

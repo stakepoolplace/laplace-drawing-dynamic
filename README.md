@@ -1,7 +1,7 @@
 # **Recurrent Neural Networks for Robotic Motor Skill Acquisition: A Laplace-Domain Analysis of Multi-Axis Motion Control**
 
-**Authors**: [Your Name], Ph.D.
-**Affiliation**: Autonomous Systems Laboratory, [Institution]
+**Authors**: Eric Marchand.
+**Affiliation**: Autonomous Systems Laboratory
 **Date**: October 24, 2025
 
 ---

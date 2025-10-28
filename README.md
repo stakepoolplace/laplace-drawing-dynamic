@@ -67,6 +67,8 @@ The code includes beautiful 3D visualizations showing the arm tracing target pat
 
 ### 2. **Synchronized Temporal Learning** ([`6-spectro-laplace-perceptron.py`](https://github.com/stakepoolplace/laplace-perceptron))
 
+![Aperçu du modèle](laplace-perceptron.png)
+
 Demonstrates **Kuramoto synchronization** between oscillator units—a phenomenon from physics where coupled oscillators naturally phase-lock. This creates emergent temporal coordination:
 
 ```python

@@ -1,4 +1,5 @@
 # The Laplace Perceptron: A Complex-Valued Neural Architecture for Continuous Signal Learning and Robotic Motion
+Author : Eric Marchand - marchand_e@hotmail.com
 
 ## Abstract
 

@@ -7,6 +7,9 @@ I'm presenting a novel neural architecture that fundamentally rethinks how we ap
 
 ## Why This Matters
 
+![Aperçu du modèle](complex_vs_real_comparison.png)
+
+
 Traditional neural networks discretize time and treat signals as sequences of independent samples. This works, but it's fundamentally misaligned with how physical systems—robots, audio, drawings—actually operate in continuous time. The Laplace Perceptron instead models signals as **damped harmonic oscillators in the frequency domain**, using learnable parameters that have direct physical interpretations.
 
 More importantly, by operating in the **complex domain** (through coupled sine/cosine bases with phase and damping), the optimization landscape becomes richer. Complex-valued representations allow gradient descent to explore solution manifolds that are inaccessible to purely real-valued networks, potentially offering escape routes from local minima that trap traditional architectures.

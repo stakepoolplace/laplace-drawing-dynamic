@@ -227,6 +227,8 @@ x = x + pos.unsqueeze(0)                         # [B,T,d_model]
 
 ## Why This Architecture Excels at Robotics
 
+![Aperçu du modèle](robot.png)
+
 Several properties make Laplace perceptrons ideal for robotic control:
 
 1. **Continuity guarantees**: Damped harmonics are infinitely differentiable → smooth velocities/accelerations

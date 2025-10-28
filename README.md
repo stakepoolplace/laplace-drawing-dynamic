@@ -65,7 +65,7 @@ class LaplaceJointEncoder(nn.Module):
 
 The code includes beautiful 3D visualizations showing the arm tracing target paths with 1:1:1 aspect ratio and optional camera rotation.
 
-### 2. **Synchronized Temporal Learning** ([`6-spectro-laplace-perceptron.py`](https://github.com/yourusername/laplace-perceptron))
+### 2. **Synchronized Temporal Learning** ([`6-spectro-laplace-perceptron.py`](https://github.com/stakepoolplace/laplace-perceptron))
 
 Demonstrates **Kuramoto synchronization** between oscillator units—a phenomenon from physics where coupled oscillators naturally phase-lock. This creates emergent temporal coordination:
 
@@ -78,7 +78,9 @@ phi_new = phi_prev + K_phase * sync_term
 
 The model learns to represent complex multi-frequency signals (damped sums of sines/cosines) while maintaining phase coherence between units. Loss curves show stable convergence even for highly non-stationary targets.
 
-### 3. **Audio Spectral Learning** ([`7-spectro_laplace_audio.py`](https://github.com/yourusername/laplace-perceptron))
+### 3. **Audio Spectral Learning** ([`7-spectro_laplace_audio.py`](https://github.com/stakepoolplace/laplace-perceptron))
+
+![Aperçu du modèle](laplace_HYBRID_L3_C64.png)
 
 Applies the architecture to **audio waveform synthesis**. By parameterizing sound as damped harmonic series, it naturally captures:
 - Formant structure (resonant frequencies)
@@ -87,7 +89,9 @@ Applies the architecture to **audio waveform synthesis**. By parameterizing soun
 
 The complex representation is particularly powerful here because audio perception is inherently frequency-domain, and phase relationships determine timbre.
 
-### 4. **Continuous Drawing Control** ([`8-laplace_drawing_face.py`](https://github.com/yourusername/laplace-perceptron))
+### 4. **Continuous Drawing Control** ([`8-laplace_drawing_face.py`](https://github.com/stakepoolplace/laplace-perceptron))
+
+![Aperçu du modèle](laplace_analysis.png)
 
 Perhaps the most visually compelling demo: learning to draw continuous line art (e.g., faces) by representing pen trajectories x(t), y(t) as Laplace series. The network learns:
 - Smooth, natural strokes (damping prevents jitter)
@@ -96,7 +100,7 @@ Perhaps the most visually compelling demo: learning to draw continuous line art 
 
 This is genuinely hard for RNNs/Transformers because they discretize time. The Laplace approach treats drawing as what it physically is: continuous motion.
 
-### 5. **Transformer-Laplace Hybrid** ([`13-laplace-transformer.py`](https://github.com/yourusername/laplace-perceptron))
+### 5. **Transformer-Laplace Hybrid** ([`13-laplace-transformer.py`](https://github.com/stakepoolplace/laplace-perceptron))
 
 Integrates Laplace perceptrons as **continuous positional encodings** in transformer architectures. Instead of fixed sinusoidal embeddings, it uses learnable damped harmonics:
 

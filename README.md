@@ -276,7 +276,7 @@ All five implementations with full documentation, visualization tools, and train
 
 Each file is self-contained with extensive comments and can be run with:
 ```bash
-python 12-laplace_jointspace_fk.py --trajectory lemniscate --epochs 3000
+python 12-laplace_jointspace_fk.py --trajectory lemniscate --epochs 2000 --n_units 270 --n_points 200 
 ```
 
 ## References

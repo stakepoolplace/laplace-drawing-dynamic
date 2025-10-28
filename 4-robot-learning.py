@@ -1,7 +1,6 @@
 # =============================================================================
-# robot-arm-fourier-lstm-FINAL_PERFECT.py
-# → OVALE PARFAIT : ni concavité, ni ligne horizontale
-# → Version "comme avant" + correction ciblée
+# robot-arm-fourier-lstm-ENHANCED.py
+# Amélioration de l'apprentissage de la forme globale (face2.png)
 # =============================================================================
 
 import numpy as np
@@ -14,11 +13,11 @@ import torch
 import torch.nn as nn
 
 # ===============================
-# 0. PARAMÈTRES (COMME AVANT, MAIS SANS EXCÈS)
+# 0. PARAMÈTRES GÉNÉRAUX
 # ===============================
-win, hop = 64, 8
-n_keep = 16
-N = 1024
+win, hop = 256, 32        # Fenêtre plus large → contexte global
+n_keep = 32               # Plus de coefficients conservés
+N = 2048                  # Plus de points pour la forme
 
 # ===============================
 # 1. CHARGEMENT + CONTOUR
@@ -65,7 +64,7 @@ R = np.max(np.abs(z_dense))
 z = (z_dense / R) * 120.0
 
 # ===============================
-# 2. STFT (COMME AVANT)
+# 2. FONCTION DE FEATURES (STFT)
 # ===============================
 def stft_features(sig):
     window = np.hanning(win)
@@ -89,6 +88,20 @@ L = min(len(feat_v), len(feat_a), len(feat_z))
 X_raw = np.concatenate([feat_v[:L], feat_a[:L]], axis=2)
 y_raw = feat_z[:L]
 
+# ===============================
+# 3. FEATURES GLOBALES
+# ===============================
+radius = np.abs(z)
+angle = np.unwrap(np.angle(z))
+r_mean = np.mean(radius)
+r_std = np.std(radius)
+a_std = np.std(angle)
+global_context = np.array([r_mean, r_std, a_std], dtype=np.float32)
+
+context_tiled = np.tile(global_context, (L, X_raw.shape[1], 1))
+X_raw = np.concatenate([X_raw, context_tiled], axis=2)
+
+# Normalisation
 X_mean = X_raw.mean(axis=(0,1), keepdims=True)
 X_std = X_raw.std(axis=(0,1), keepdims=True) + 1e-8
 y_mean = y_raw.mean(axis=(0,1), keepdims=True)
@@ -98,43 +111,55 @@ X = torch.tensor((X_raw - X_mean) / X_std, dtype=torch.float32)
 y = torch.tensor((y_raw - y_mean) / y_std, dtype=torch.float32)
 
 # ===============================
-# 3. MODÈLE (BIDIRECTIONNEL)
+# 4. MODÈLE LSTM AMÉLIORÉ
 # ===============================
 class BiFreqLSTM(nn.Module):
-    def __init__(self, input_dim, hidden=64):
+    def __init__(self, input_dim, hidden=128):
         super().__init__()
-        self.lstm = nn.LSTM(input_dim, hidden, batch_first=True, bidirectional=True, dropout=0.3)
+        self.lstm = nn.LSTM(input_dim, hidden, batch_first=True, bidirectional=True, num_layers=2, dropout=0.3)
         self.fc = nn.Linear(hidden * 2, 2)
     def forward(self, x):
         out, _ = self.lstm(x)
         return self.fc(out)
 
 model = BiFreqLSTM(X.shape[2])
-opt = torch.optim.Adam(model.parameters(), lr=3e-3)
+opt = torch.optim.Adam(model.parameters(), lr=2e-3)
 loss_fn = nn.MSELoss()
 
-print("Entraînement...")
+# ===============================
+# 5. ENTRAÎNEMENT (AVEC DOUBLE PERTE)
+# ===============================
+print("Entraînement amélioré...")
 best_loss = float('inf')
 wait = 0
-for epoch in range(4000):
+for epoch in range(6000):
     opt.zero_grad()
     out = model(X)
-    loss = loss_fn(out, y)
+    loss_freq = loss_fn(out, y)
+
+    # Reconstruction géométrique rapide
+    pred_geo = torch.fft.ifft(torch.fft.fft(out, n=win)).real
+    target_geo = torch.fft.ifft(torch.fft.fft(y, n=win)).real
+    loss_geo = torch.mean((pred_geo - target_geo) ** 2)
+
+    loss = loss_freq + 0.2 * loss_geo
     loss.backward()
     opt.step()
+
     if epoch % 300 == 0:
         print(f"Epoch {epoch:4d} | Loss = {loss.item():.6f}")
+
     if loss.item() < best_loss:
         best_loss = loss.item()
         wait = 0
     else:
         wait += 1
-        if wait >= 200:
+        if wait >= 300:
             print("Early stopping")
             break
 
 # ===============================
-# 4. RECONSTRUCTION (CORRECTION CIBLÉE)
+# 6. RECONSTRUCTION
 # ===============================
 model.eval()
 with torch.no_grad():
@@ -147,15 +172,12 @@ window = np.hanning(win)
 for i in range(len(pred)):
     start = i * hop
     amp, phase = pred[i, :, 0], pred[i, :, 1]
-
     spec = np.zeros(win, dtype=complex)
     spec[:n_keep] = amp * np.exp(1j * phase)
     if n_keep > 1:
         spec[-n_keep+1:] = np.conj(spec[1:n_keep][::-1])
-
     seg = np.fft.ifft(spec)
-    seg *= window  # Hann simple
-
+    seg *= window
     end = min(start + win, len(z))
     seg = seg[:end - start]
     reconstructed[start:end] += seg.astype(complex)
@@ -164,34 +186,33 @@ for i in range(len(pred)):
 count[count == 0] = 1
 z_rec = reconstructed / count
 
-# Lissage doux (seulement si nécessaire)
-z_rec_real = signal.savgol_filter(z_rec.real, 31, 3)
-z_rec_imag = signal.savgol_filter(z_rec.imag, 31, 3)
+# Lissage doux
+z_rec_real = signal.savgol_filter(z_rec.real, 51, 3)
+z_rec_imag = signal.savgol_filter(z_rec.imag, 51, 3)
 z_rec = z_rec_real + 1j * z_rec_imag
-
 z_rec -= np.mean(z_rec)
 R_rec = np.max(np.abs(z_rec))
 z_rec = (z_rec / R_rec) * 120.0 if R_rec > 1e-6 else z_rec
 
 # ===============================
-# 5. COMPARAISON
+# 7. VISUALISATION COMPARATIVE
 # ===============================
 plt.figure(figsize=(14, 6))
 plt.subplot(1, 2, 1)
 plt.plot(z.real, z.imag, 'b-', lw=3, label="Original")
-plt.plot(z_rec.real, z_rec.imag, 'r--', lw=3, label="Reconstruit")
+plt.plot(z_rec.real, z_rec.imag, 'r--', lw=3, label="Reconstruit (amélioré)")
 plt.legend(); plt.axis('equal'); plt.grid(True, alpha=0.3)
-plt.title("OVALE PARFAIT - Ni concavité, ni ligne")
+plt.title("Apprentissage global du contour de face2.png")
 
 plt.subplot(1, 2, 2)
 plt.plot(z.real[:400], z.imag[:400], 'b-', lw=2)
 plt.plot(z_rec.real[:400], z_rec.imag[:400], 'r--', lw=2)
-plt.axis('equal'); plt.title("Zoom")
+plt.axis('equal'); plt.title("Zoom sur début du tracé")
 plt.tight_layout()
 plt.show()
 
 # ===============================
-# 6. BRAS ROBOTISÉ
+# 8. BRAS ROBOTISÉ (inchangé)
 # ===============================
 link_lengths = [40, 35, 30, 25, 20, 15]
 total_height = sum(link_lengths)
@@ -214,7 +235,7 @@ fig = plt.figure(figsize=(12, 9))
 ax = fig.add_subplot(111, projection='3d')
 ax.set_xlim(-140, 140); ax.set_ylim(-140, 140); ax.set_zlim(0, total_height + 20)
 ax.view_init(elev=30, azim=-70)
-ax.set_title("Bras robotisé - Ovale parfait")
+ax.set_title("Bras robotisé - Tracé appris de face2.png")
 
 arm_lines = [ax.plot([], [], [], 'b-', lw=6)[0] for _ in range(len(link_lengths))]
 joint_lines = [ax.plot([], [], [], 'ro', ms=8)[0] for _ in range(len(link_lengths) + 1)]
@@ -227,24 +248,20 @@ def animate(i):
     tx, ty = Z.real, Z.imag
     positions = ik_6dof_with_z(tx, ty)
     pos_array = np.array(positions)
-
     for j, line in enumerate(arm_lines):
         p0, p1 = pos_array[j], pos_array[j+1]
         line.set_data([p0[0], p1[0]], [p0[1], p1[1]])
         line.set_3d_properties([p0[2], p1[2]])
-
     for j, line in enumerate(joint_lines):
         p = pos_array[j]
         line.set_data([p[0]], [p[1]])
         line.set_3d_properties([p[2]])
-
     trail.append(complex(tx, ty))
     if len(trail) > 1500: trail.pop(0)
     txs = [p.real for p in trail]
     tys = [p.imag for p in trail]
     drawing_line.set_data(txs, tys)
     drawing_line.set_3d_properties([0] * len(txs))
-
     return arm_lines + joint_lines + [drawing_line]
 
 print("Animation...")

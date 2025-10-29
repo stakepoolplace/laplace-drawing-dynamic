@@ -272,7 +272,7 @@ For robotics and motion learning specifically, this means we can learn smoother,
 
 ## Code Availability
 
-All five implementations with full documentation, visualization tools, and trained examples: [GitHub Repository](#) *(replace with actual link)*
+All five implementations with full documentation, visualization tools, and trained examples: [GitHub Repository](https://github.com/stakepoolplace/laplace-drawing-dynamic) 
 
 Each file is self-contained with extensive comments and can be run with:
 ```bash
